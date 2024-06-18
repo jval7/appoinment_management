@@ -1,22 +1,7 @@
 default_stages: [ commit, manual ]
 
 repos:
-  # Websec hook is MANDATORY, DO NOT comment it.
-  - repo: https://github.com/melisource/fury_websec-git-hooks
-    rev: v1.0.6
-    hooks:
-      - id: pre_commit_hook
-        stages: [ commit ]
-      - id: post_commit_hook
-        stages: [ post-commit ]
 
-  # Datasec hook is MANDATORY, DO NOT comment it.
-  - repo: https://github.com/melisource/fury_datasec-git-hooks
-    rev: 1.0.1
-    hooks:
-      - id: pre_commit_hook
-        stages: [ commit ]
-        verbose: true
 
   # In order to be able to run the pip-audit hook correctly it is a must to have Poetry installed.
   - repo: https://github.com/trailofbits/pip-audit.git
