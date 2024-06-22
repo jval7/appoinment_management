@@ -1,24 +1,19 @@
 import logging
 import os
 import sys
-from typing import Optional
 
-format = (
-    "%(asctime)s | %(levelname)-7s | %(module)s.%(funcName)s:%(lineno)d | %(message)s"
-)
-logger: Optional[logging.Logger] = None
+format_ = "%(asctime)s | %(levelname)-7s | %(module)s.%(funcName)s:%(lineno)d | %(message)s"
 
 
 def get_lambda_logger() -> logging.Logger:
-    global logger
-    if not logger:
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        stdout_handler.setFormatter(logging.Formatter(format))
-        logger = logging.getLogger(
-            os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "NoLambdaEnvironment")
-        )
-        logger.propagate = False
-        logger.setLevel(logging.INFO)
-        stdout_handler.setLevel(logging.INFO)
-        logger.addHandler(stdout_handler)
-    return logger
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setFormatter(logging.Formatter(format_))
+    logger_ = logging.getLogger(os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "NoLambdaEnvironment"))
+    logger_.propagate = False
+    logger_.setLevel(logging.INFO)
+    stdout_handler.setLevel(logging.INFO)
+    logger_.addHandler(stdout_handler)
+    return logger_
+
+
+logger = get_lambda_logger()

@@ -13,6 +13,10 @@ class BaseParameters(pydantic.BaseModel):
         return cls.__name__
 
 
+class GetAppointments(BaseParameters):
+    number_of_appointments: int = 5
+
+
 class CreateAppointmentParams(BaseParameters):
     appointment_id: base_types.HumanFriendlyId = pydantic.Field(default_factory=base_types.HumanFriendlyId)
     name: str
@@ -28,6 +32,9 @@ class CreateAppointmentParams(BaseParameters):
     def parse_date(cls, data: dict[str, Any]) -> dict[str, Any]:
         data["date"] = base_types.Iso8601Datetime(date=data["date"])
         return data
+
+    def __str__(self) -> str:
+        return f"Id: {self.appointment_id},  Nombre: {self.name}, Fecha: {str(self.date)}, Estado de pago: {self.payment_state.value}"
 
 
 class ModifyAppointmentParams(BaseParameters):

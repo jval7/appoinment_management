@@ -2,8 +2,20 @@ import json
 
 import pydantic
 from openai import OpenAI
-
+from app.commons import logger
 from app.appointment_management.domain import ports, models, exceptions
+
+
+class FakeOpenaiClient(ports.LlmAdapter):
+    def __call__(self, professional_prompt: str) -> models.BaseParameters:
+        return models.CreateAppointmentParams(
+            name="nombre del paciente",
+            identification="identificación del paciente",
+            phone_number="número de teléfono del paciente",
+            email="jj@test.com",
+            date="2024-06-19T15:20:30",
+            motive="motivo de la cita",
+        )
 
 
 class OpenaiExecutor(ports.LlmAdapter):
@@ -29,6 +41,7 @@ class OpenaiExecutor(ports.LlmAdapter):
 
     @staticmethod
     def _string_to_domain(json_string: str) -> models.BaseParameters:
+        logger.info(f"json_string: {json_string}")
         dict_obj = json.loads(json_string)
         crud_type = dict_obj.pop("command")
         try:
@@ -38,8 +51,14 @@ class OpenaiExecutor(ports.LlmAdapter):
                 params = models.ModifyAppointmentParams.parse_obj(dict_obj)
             elif crud_type == models.DeleteAppointmentParams.get_command_name():
                 params = models.DeleteAppointmentParams.parse_obj(dict_obj)
+            elif crud_type == models.GetAppointments.get_command_name():
+                params = models.GetAppointments.parse_obj(dict_obj)
             else:
+                logger.error(f"Invalid crud_type: {crud_type}")
                 raise exceptions.InvalidCrudType(f"Invalid crud_type: {crud_type}")
         except pydantic.ValidationError as e:
-            raise exceptions.FieldNotFoundError(f"Field not found: {e}") from e
+            # error_type = e.errors()[0]["type"]
+            # variable = e.errors()[0]["loc"][0]
+            logger.warning(f"Error validating params: {e}")
+            raise exceptions.FieldNotFoundError()
         return params
