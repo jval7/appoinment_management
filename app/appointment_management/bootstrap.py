@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import functools
+import inspect
+from collections.abc import Callable
+
 from openai import OpenAI
 import requests
 from requests.adapters import HTTPAdapter
@@ -8,18 +12,23 @@ from urllib3.util.retry import Retry
 from app.appointment_management import adapters
 from app.appointment_management import configurations
 from app.appointment_management.domain import ports
-from app.appointment_management.services import handlers
+from app.appointment_management.services import process_request, handler_manager, handlers
 
 
 class _BootStrap:
     def __init__(
-        self, llm_adapter: ports.LlmAdapter | None = None, db_adapter: ports.DbAdapter | None = None, messages: ports.Messages | None = None
+        self,
+        llm_adapter: ports.LlmAdapter | None = None,
+        db_adapter: ports.DbAdapter | None = None,
+        messages: ports.Messages | None = None,
+        h_manager: handler_manager.HandlerManager | None = None,
     ) -> None:
         self._llm_adapter = llm_adapter
         self._db_adapter = db_adapter
         self._messages = messages
+        self._handler_manager = h_manager
 
-    def setup_dependencies(self) -> handlers.AppointmentManagementHandler:
+    def setup_dependencies(self) -> process_request.AppointmentManagementHandler:
         messages_config = configurations.Configs()
         if not self._llm_adapter:
             openai_client = OpenAI(base_url=messages_config.openai_url, api_key=messages_config.openai_api_key)
@@ -43,14 +52,23 @@ class _BootStrap:
             adapter = HTTPAdapter(max_retries=retry)
             http_client.mount("https://", adapter)
             self._messages = adapters.Notifications(http_client=http_client, url=messages_config.url, headers=messages_config.headers)
-        return handlers.AppointmentManagementHandler(
+        if not self._handler_manager:
+            dependencies = {"prompt_evaluator": self._prompt_evaluator, "image_evaluator": self._image_evaluator}
+            injected_command_handlers = {
+                command_type: _inject_dependencies(handler, dependencies) for command_type, handler in handlers.COMMAND_HANDLERS.items()
+            }
+            self._handler_manager = handler_manager.HandlerManager(command_handlers=injected_command_handlers)
+        return process_request.AppointmentManagementHandler(
             llm_executor=self._llm_adapter,
             messages=self._messages,
-            db_adapter=self._db_adapter,
-            appointment_created_response="Cita creada exitosamente",
-            appointment_modified_response="Cita modificada exitosamente",
-            appointment_deleted_response="Cita eliminada exitosamente",
+            h_manager=self._handler_manager,
         )
+
+
+def _inject_dependencies(handler: Callable, dependencies: dict) -> Callable:
+    params = inspect.signature(handler).parameters
+    deps = {name: dependency for name, dependency in dependencies.items() if name in params}
+    return functools.partial(handler, **deps)
 
 
 # app = _BootStrap(llm_adapter=adapters.FakeOpenaiClient()).setup_dependencies()

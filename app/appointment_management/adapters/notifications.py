@@ -10,7 +10,7 @@ class Notifications(ports.Messages):
         self._url = url
         self._headers = headers
 
-    def reply(self, message: str, from_: str, to: str) -> None:
+    def reply(self, message: str, to: str) -> None:
         data = {
             "messaging_product": "whatsapp",
             "recipient_type": "individual",

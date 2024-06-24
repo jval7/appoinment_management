@@ -1,6 +1,3 @@
-import json
-from time import sleep
-
 from app.appointment_management.bootstrap import app
 from app.appointment_management.entrypoints import dtos
 from app.commons import logger
@@ -9,6 +6,7 @@ from app.commons import logger
 def lambda_handler(event, context):
     logger.info(f"event: {event}")
     event_dto = dtos.Event.parse_obj(event)
+
     prompt = event_dto.get_text_message()
     if prompt:
         requester_phone_number = event_dto.get_requester_phone_number()

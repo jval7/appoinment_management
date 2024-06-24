@@ -1,9 +1,11 @@
 import json
+from collections.abc import Callable
+from typing import Type, cast
 
 import pydantic
 from openai import OpenAI
 from app.commons import logger
-from app.appointment_management.domain import ports, models, exceptions
+from app.appointment_management.domain import ports, models, exceptions, commands
 
 
 class FakeOpenaiClient(ports.LlmAdapter):
@@ -25,8 +27,12 @@ class OpenaiExecutor(ports.LlmAdapter):
         self._base_prompt = base_prompt
         self._max_tokens = max_tokens
         self._temperature = temperature
+        self._domain_strategies_parser: dict[str, Callable[[dict], Type[commands.Command]]] = {
+            commands.CreateAppointment.get_command_name(): commands.CreateAppointment.parse_obj,
+            commands.GetAppointments.get_command_name(): commands.GetAppointments.parse_obj,
+        }
 
-    def __call__(self, professional_prompt: str) -> models.BaseParameters:
+    def __call__(self, professional_prompt: str) -> commands.Command:
         response = self._openai_client.chat.completions.create(
             model=self._model,
             response_format={"type": "json_object"},
@@ -39,26 +45,19 @@ class OpenaiExecutor(ports.LlmAdapter):
         )
         return self._string_to_domain(response.choices[0].message.content)
 
-    @staticmethod
-    def _string_to_domain(json_string: str) -> models.BaseParameters:
+    def _string_to_domain(self, json_string: str) -> commands.Command:
         logger.info(f"json_string: {json_string}")
         dict_obj = json.loads(json_string)
         crud_type = dict_obj.pop("command")
+        strategy = self._domain_strategies_parser.get(crud_type)
+        if not strategy:
+            logger.error(f"Invalid crud_type: {crud_type}")
+            raise exceptions.InvalidCrudType(f"Invalid crud_type: {crud_type}")
         try:
-            if crud_type == models.CreateAppointmentParams.get_command_name():
-                params = models.CreateAppointmentParams.parse_obj(dict_obj)
-            elif crud_type == models.ModifyAppointmentParams.get_command_name():
-                params = models.ModifyAppointmentParams.parse_obj(dict_obj)
-            elif crud_type == models.DeleteAppointmentParams.get_command_name():
-                params = models.DeleteAppointmentParams.parse_obj(dict_obj)
-            elif crud_type == models.GetAppointments.get_command_name():
-                params = models.GetAppointments.parse_obj(dict_obj)
-            else:
-                logger.error(f"Invalid crud_type: {crud_type}")
-                raise exceptions.InvalidCrudType(f"Invalid crud_type: {crud_type}")
+            command_model = cast(strategy(dict_obj), commands.Command)
         except pydantic.ValidationError as e:
+            logger.warning(f"Error validating params: {e}")
             # error_type = e.errors()[0]["type"]
             # variable = e.errors()[0]["loc"][0]
-            logger.warning(f"Error validating params: {e}")
             raise exceptions.FieldNotFoundError()
-        return params
+        return command_model

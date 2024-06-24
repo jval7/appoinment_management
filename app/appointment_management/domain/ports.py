@@ -2,12 +2,12 @@ import abc
 
 import pydantic
 
-from app.appointment_management.domain import models
+from app.appointment_management.domain import models, commands
 
 
 class LlmAdapter(abc.ABC):
     @abc.abstractmethod
-    def __call__(self, professional_prompt: str) -> models.BaseParameters: ...
+    def __call__(self, professional_prompt: str) -> commands.Command: ...
 
 
 class DbAdapter(abc.ABC):
@@ -24,7 +24,7 @@ class DbAdapter(abc.ABC):
 
 class Messages(abc.ABC):
     @abc.abstractmethod
-    def reply(self, message: str, from_: str, to: str) -> None: ...
+    def reply(self, message: str, to: str) -> None: ...
 
     @abc.abstractmethod
     def start_conversation(self, to: str) -> None: ...
