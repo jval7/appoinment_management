@@ -1,25 +1,23 @@
+from typing import Any
+
 import boto3
 
-from app.appointment_management.domain import models, ports
-import boto3to3to3
+from app.appointment_management.domain import models, ports, commands, exceptions
 from app.commons import base_types
 
 
 class InMemoryDb(ports.DbAdapter):
-    def __init__(self) -> None:
-        self._db: dict[base_types.HumanFriendlyId, models.CreateAppointmentParams] = {}
+    def __init__(self, db: dict | None = None) -> None:
+        self._db: dict[str, dict[str, Any]] = db or {}
 
-    def create_appointment(self, model_params: models.CreateAppointmentParams) -> str:
-        self._db[model_params.appointment_id] = model_params
+    def save_agenda(self, agenda: models.Agenda) -> None:
+        self._db[agenda.id] = agenda.model_dump()
 
-    def get_appointments(self, number_of_appointments: int) -> list:
-        return [str(i) for i in list(self._db.values())[:number_of_appointments]]
-
-    def modify_appointment(self, model_params: models.ModifyAppointmentParams) -> str:
-        print(model_params)
-
-    def delete_appointment(self, model_params: models.DeleteAppointmentParams) -> str:
-        print(model_params)
+    def get_agenda(self, agenda_id: str) -> models.Agenda:
+        agenda = self._db.get(agenda_id)
+        if agenda is None:
+            raise exceptions.AgentNotFound("Agenda not found")
+        return models.Agenda.parse_obj(agenda)
 
 
 class DynamoDb(ports.DbAdapter):
@@ -27,14 +25,12 @@ class DynamoDb(ports.DbAdapter):
         self._client = boto3.resource("dynamodb")
         self._table = self._client.Table(table_name)
 
-    def create_appointment(self, model_params: models.CreateAppointmentParams) -> str:
-        self._db[model_params.appointment_id] = model_params
+    def save_agenda(self, agenda: models.Agenda) -> None:
+        self._table.put_item(Item=agenda.model_dump())
 
-    def get_appointments(self, number_of_appointments: int) -> list:
-        return [str(i) for i in list(self._db.values())[:number_of_appointments]]
-
-    def modify_appointment(self, model_params: models.ModifyAppointmentParams) -> str:
-        print(model_params)
-
-    def delete_appointment(self, model_params: models.DeleteAppointmentParams) -> str:
-        print(model_params)
+    def get_agenda(self, agenda_id: str) -> models.Agenda:
+        response = self._table.get_item(Key={"id": agenda_id})
+        if "Item" not in response:
+            raise exceptions.AgentNotFound("Agenda not found")
+        print(response)
+        return models.Agenda.parse_obj(response["Item"])

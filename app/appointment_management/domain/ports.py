@@ -1,25 +1,19 @@
 import abc
 
-import pydantic
-
-from app.appointment_management.domain import models, commands
+from app.appointment_management.domain import commands, models
 
 
 class LlmAdapter(abc.ABC):
     @abc.abstractmethod
-    def __call__(self, professional_prompt: str) -> commands.Command: ...
+    def __call__(self, professional_prompt: str, requester_phone_number: str) -> commands.Command: ...
 
 
 class DbAdapter(abc.ABC):
     @abc.abstractmethod
-    def create_appointment(self, model_params: models.CreateAppointmentParams) -> str: ...
-    @abc.abstractmethod
-    def get_appointments(self, number_of_appointments: int) -> list: ...
-    @abc.abstractmethod
-    def modify_appointment(self, model_params: models.ModifyAppointmentParams) -> str: ...
+    def save_agenda(self, agenda: models.Agenda) -> None: ...
 
     @abc.abstractmethod
-    def delete_appointment(self, model_params: models.DeleteAppointmentParams) -> str: ...
+    def get_agenda(self, agenda_id: str) -> models.Agenda: ...
 
 
 class Messages(abc.ABC):

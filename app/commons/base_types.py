@@ -1,6 +1,7 @@
 import enum
 import random
 import string
+import time
 import uuid
 from datetime import datetime
 
@@ -19,22 +20,40 @@ class ValueObject(pydantic.BaseModel):
 
 
 class Iso8601Datetime(ValueObject):
-    date: str
+    date: datetime
+
+    def __eq__(self, other):
+        if isinstance(other, Iso8601Datetime):
+            return self.date == other.date
+        elif isinstance(other, str):
+            return self.date == datetime.fromisoformat(other)
+        else:
+            return False
+
+    @classmethod
+    def from_str(cls, date: str) -> "Iso8601Datetime":
+        return cls(date=datetime.fromisoformat(date))
+
+    def to_str(self) -> str:
+        return self.date.strftime("%Y-%m-%dT%H:%M")
+
+    def to_str_short_date(self) -> str:
+        return self.date.strftime("%Y-%m-%d")
+
+    def to_str_hour_minute(self) -> str:
+        return self.date.strftime("%H:%M")
 
     def __str__(self) -> str:
-        return self.date
-
-    def to_datetime(self) -> datetime:
-        return datetime.fromisoformat(self.date)
+        return self.date.strftime("%Y-%m-%dT%H:%M")
 
     @staticmethod
     def now() -> "Iso8601Datetime":
-        return Iso8601Datetime(date=datetime.utcnow().isoformat() + "Z")
+        return Iso8601Datetime(date=datetime.now())
 
 
 class IDGenerator:
     @staticmethod
-    def human_friendly(size: int = 10) -> str:
+    def human_friendly(size: int = 4) -> str:
         if size < 1:
             raise ValueError("The size must be greater than zero")
 
@@ -45,11 +64,3 @@ class IDGenerator:
         return str(uuid.uuid4())
 
 
-class HumanFriendlyId(ValueObject):
-    value: str = pydantic.Field(default_factory=IDGenerator.human_friendly)
-
-    def __str__(self) -> str:
-        return self.value
-
-    def __repr__(self) -> str:
-        return self.value

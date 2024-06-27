@@ -9,14 +9,16 @@ from app.appointment_management.domain import ports, models, exceptions, command
 
 
 class FakeOpenaiClient(ports.LlmAdapter):
-    def __call__(self, professional_prompt: str) -> models.BaseParameters:
-        return models.CreateAppointmentParams(
+    def __call__(self, professional_prompt: str, requester_phone_number: str) -> commands.Command:
+        return commands.CreateAppointment(
             name="nombre del paciente",
             identification="identificación del paciente",
+            age=20,
             phone_number="número de teléfono del paciente",
             email="jj@test.com",
             date="2024-06-19T15:20:30",
             motive="motivo de la cita",
+            requester_phone_number=requester_phone_number,
         )
 
 
@@ -30,9 +32,11 @@ class OpenaiExecutor(ports.LlmAdapter):
         self._domain_strategies_parser: dict[str, Callable[[dict], Type[commands.Command]]] = {
             commands.CreateAppointment.get_command_name(): commands.CreateAppointment.parse_obj,
             commands.GetAppointments.get_command_name(): commands.GetAppointments.parse_obj,
+            commands.ModifyAppointment.get_command_name(): commands.ModifyAppointment.parse_obj,
+            commands.DeleteAppointment.get_command_name(): commands.DeleteAppointment.parse_obj,
         }
 
-    def __call__(self, professional_prompt: str) -> commands.Command:
+    def __call__(self, professional_prompt: str, requester_phone_number: str) -> commands.Command:
         response = self._openai_client.chat.completions.create(
             model=self._model,
             response_format={"type": "json_object"},
@@ -43,18 +47,19 @@ class OpenaiExecutor(ports.LlmAdapter):
             max_tokens=self._max_tokens,
             temperature=self._temperature,
         )
-        return self._string_to_domain(response.choices[0].message.content)
+        return self._string_to_domain(json_string=response.choices[0].message.content, requester_phone_number=requester_phone_number)
 
-    def _string_to_domain(self, json_string: str) -> commands.Command:
+    def _string_to_domain(self, json_string: str, requester_phone_number: str) -> commands.Command:
         logger.info(f"json_string: {json_string}")
         dict_obj = json.loads(json_string)
+        dict_obj["requester_phone_number"] = requester_phone_number
         crud_type = dict_obj.pop("command")
         strategy = self._domain_strategies_parser.get(crud_type)
         if not strategy:
             logger.error(f"Invalid crud_type: {crud_type}")
             raise exceptions.InvalidCrudType(f"Invalid crud_type: {crud_type}")
         try:
-            command_model = cast(strategy(dict_obj), commands.Command)
+            command_model = cast(commands.Command, strategy(dict_obj))
         except pydantic.ValidationError as e:
             logger.warning(f"Error validating params: {e}")
             # error_type = e.errors()[0]["type"]

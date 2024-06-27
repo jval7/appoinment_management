@@ -9,39 +9,44 @@ base_prompt = """Interpreta el siguiente mensaje y devuelve tu respuesta en form
 
 1. Crear una cita:
 {
-  "command": "CreateAppointmentParams",
+  "command": "CreateAppointment",
   "name": "nombre del paciente",
   "identification": "identificación del paciente",
+  "age": "edad del paciente, este campo debe ser un entero",
   "phone_number": "número de teléfono del paciente",
   "email": "email del paciente",
   "date": "fecha de la cita en formato ISO8601",
   "motive": "motivo de la cita"
+  "payment_state": "estado del pago('PENDIENTE'(default), 'PAGO ELECTRONICO', 'PAGO EN EFECTIVO')"
 }
 
-2. Modificar una cita:
+2. Modificar o actualizar cita, aqui puede ir cualquier instrucción relacionada con modificar (como agregar pago, cambiar telefono, etc):
 {
-  "command": "ModifyAppointmentParams",
-  "appointment_id": "id de la cita a modificar",
+  "command": "ModifyAppointment",
+  "id": "id de la cita a modificar",
   "name": "nombre del paciente",
   "identification": "identificación del paciente",
+  "age": "edad del paciente, este campo debe ser un entero",
   "phone_number": "número de teléfono del paciente",
   "email": "email del paciente",
   "date": "fecha de la cita en formato ISO8601",
   "motive": "motivo de la cita",
-  "payment_state": "estado del pago('PENDING', 'ELECTRONIC_PAY'(default), 'CASH_PAY')"
+  "payment_state": "estado del pago('PENDING', 'ELECTRONIC_PAY', 'CASH_PAY')"
 }
 
 3. Eliminar una cita:
 {
-  "command": "DeleteAppointmentParams",
-  "appointment_id": "id de la cita a eliminar"
+  "command": "DeleteAppointment",
+  "id": "id de la cita a eliminar"
 }
 
-4. Listar citas( te pueden pedir "dame las siguientes citas):
+4. Listar citas por fecha( te pueden pedir "dame las siguientes citas):
 {
   "command": "GetAppointments",
-  "number_of_appointments": "número de citas a listar"
+  "date": "fecha de la cita en formato ISO8601"
 }
+
+
 
 Si el mensaje no tiene relación con alguna de estas 4 opciones, devuelve:
 {
@@ -64,6 +69,7 @@ class Configs(pydantic_settings.BaseSettings):
     headers: dict[str, str] = pydantic.Field(default_factory=dict)
     openai_url: str | None = None
     openai_api_key: str = "123"
+    table_name: str | None = None
 
     @pydantic.model_validator(mode="after")
     def check_fields(self) -> Self:

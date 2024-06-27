@@ -11,13 +11,6 @@ class AppointmentManagementHandler:
     ) -> None:
         self._llm_executor = llm_executor
         self._messages = messages
-        # self._appointment_created_response = appointment_created_response
-        # self._appointment_modified_response = appointment_modified_response
-        # self._appointment_deleted_response = appointment_deleted_response
-        # self._process_request_strategies: dict[type[commands.Command], handlers.Strategy] = {
-        #     commands.CreateAppointment: handlers.create_appointment(response=self._appointment_created_response),
-        #     commands.GetAppointments: handlers.get_appointments(),
-        # }
         self._handler_manager = h_manager
 
     def process_request(self, prompt: str, requester_phone_number: str) -> None:
@@ -29,14 +22,12 @@ class AppointmentManagementHandler:
         except exceptions.FieldNotFoundError:
             self._messages.reply(message="Falta algún campo para realizar la operación", to=requester_phone_number)
             return
-        response = self._handler_manager(cmd=cmd)
-        self._messages.reply(message=response, to=requester_phone_number)
-        # handler_strategy = self._process_request_strategies.get(type(cmd))
-        # if not handler_strategy:
-        #     raise exceptions.InvalidModelParams(f"Invalid cmd: {cmd}")
-        # handler_strategy.execute(
-        #     cmd=cmd,
-        #     db_adapter=self._db_adapter,
-        #     messages=self._messages,
-        #     professional_phone_number=professional_phone_number,
-        # )
+        try:
+            response = self._handler_manager(cmd=cmd)
+            self._messages.reply(message=response, to=requester_phone_number)
+        except exceptions.ScheduleAlreadyTaken:
+            self._messages.reply(message="El horario indicado se encuentra ocupado", to=requester_phone_number)
+        except exceptions.AppointmentNotFound:
+            self._messages.reply(message="No se encontró la cita", to=requester_phone_number)
+
+    # def manage_notifications(self, broadcaster_phone:str) -> None:

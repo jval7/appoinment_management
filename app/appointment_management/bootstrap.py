@@ -29,9 +29,9 @@ class _BootStrap:
         self._handler_manager = h_manager
 
     def setup_dependencies(self) -> process_request.AppointmentManagementHandler:
-        messages_config = configurations.Configs()
+        configs = configurations.Configs()
         if not self._llm_adapter:
-            openai_client = OpenAI(base_url=messages_config.openai_url, api_key=messages_config.openai_api_key)
+            openai_client = OpenAI(base_url=configs.openai_url, api_key=configs.openai_api_key)
             self._llm_adapter = adapters.OpenaiExecutor(
                 model="gpt-3.5-turbo-0125",
                 openai_client=openai_client,
@@ -40,10 +40,9 @@ class _BootStrap:
                 temperature=0,
             )
         if not self._db_adapter:
-            self._db_adapter = adapters.InMemoryDb()
+            self._db_adapter = adapters.DynamoDb(table_name=configs.table_name)
         if not self._messages:
             http_client = requests.Session()
-
             retry = Retry(
                 total=0,  # Total number of retries
                 backoff_factor=0.1,  # Time to sleep between retries
@@ -51,9 +50,9 @@ class _BootStrap:
             )
             adapter = HTTPAdapter(max_retries=retry)
             http_client.mount("https://", adapter)
-            self._messages = adapters.Notifications(http_client=http_client, url=messages_config.url, headers=messages_config.headers)
+            self._messages = adapters.Notifications(http_client=http_client, url=configs.url, headers=configs.headers)
         if not self._handler_manager:
-            dependencies = {"prompt_evaluator": self._prompt_evaluator, "image_evaluator": self._image_evaluator}
+            dependencies = {"db_adapter": self._db_adapter}
             injected_command_handlers = {
                 command_type: _inject_dependencies(handler, dependencies) for command_type, handler in handlers.COMMAND_HANDLERS.items()
             }
@@ -71,5 +70,6 @@ def _inject_dependencies(handler: Callable, dependencies: dict) -> Callable:
     return functools.partial(handler, **deps)
 
 
-# app = _BootStrap(llm_adapter=adapters.FakeOpenaiClient()).setup_dependencies()
+# app = _BootStrap(llm_adapter=adapters.FakeOpenaiClient(), db_adapter=adapters.InMemoryDb(db={"1": {"id": "1"}})).setup_dependencies()
+# app = _BootStrap(db_adapter=adapters.InMemoryDb(db={"1": {"id": "1"}}),messages=adapters.FakeNotifications()).setup_dependencies()
 app = _BootStrap().setup_dependencies()

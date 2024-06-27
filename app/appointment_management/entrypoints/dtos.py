@@ -36,7 +36,8 @@ class Event(pydantic.BaseModel):
     @pydantic.model_validator(mode="before")
     @classmethod
     def parse_body(cls, data: dict[str, Any]) -> dict[str, Any]:
-        data["body"] = json.loads(data["body"])
+        if isinstance(data["body"], str):
+            data["body"] = json.loads(data["body"])
         return data
 
     def _get_messages(self) -> List[_Message] | None:
