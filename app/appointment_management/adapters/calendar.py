@@ -1,3 +1,4 @@
+
 import datetime as dt
 import json
 import os.path
@@ -30,9 +31,7 @@ class GoogleCalendarManager:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    "client_secret_app_escritorio_oauth.json", SCOPES
-                )
+                flow = InstalledAppFlow.from_client_secrets_file("client_secret_app_escritorio_oauth.json", SCOPES)
                 creds = flow.run_local_server(port=0)
 
             # Save the credentials for the next run
@@ -53,11 +52,7 @@ class GoogleCalendarManager:
         headers = {"Authorization": f"Bearer {token}"}
         time_min = time_min or dt.datetime.utcnow().isoformat() + "Z"
         time_max = (
-            time_max
-            or (dt.datetime.now() + dt.timedelta(days=3))
-            .replace(hour=23, minute=59, second=0, microsecond=0)
-            .isoformat()
-            + "Z"
+            time_max or (dt.datetime.now() + dt.timedelta(days=3)).replace(hour=23, minute=59, second=0, microsecond=0).isoformat() + "Z"
         )
 
         response = requests.get(
@@ -83,21 +78,13 @@ class GoogleCalendarManager:
         else:
             print(f"Error: {response.status_code} - {response.text}")
 
-    def get_free_busy_agenda(
-        self, time_min: Optional[str] = None, time_max: Optional[str] = None
-    ):
+    def get_free_busy_agenda(self, time_min: Optional[str] = None, time_max: Optional[str] = None):
         token = self._token["token"]
         url = f"https://www.googleapis.com/calendar/v3/freeBusy"
         headers = {"Authorization": f"Bearer {token}"}
-        time_min = (
-            time_min or dt.datetime.now(pytz.timezone("America/Bogota")).isoformat()
-        )
+        time_min = time_min or dt.datetime.now(pytz.timezone("America/Bogota")).isoformat()
         time_max = (
-            time_max
-            or (dt.datetime.now() + dt.timedelta(days=3))
-            .replace(hour=23, minute=59, second=0, microsecond=0)
-            .isoformat()
-            + "Z"
+            time_max or (dt.datetime.now() + dt.timedelta(days=3)).replace(hour=23, minute=59, second=0, microsecond=0).isoformat() + "Z"
         )
 
         response = requests.post(
@@ -147,9 +134,7 @@ class GoogleCalendarManager:
 
 
 start_time = (dt.datetime.now() + dt.timedelta(days=1)).isoformat() + "Z"  # Tomorrow
-end_time = (
-    dt.datetime.now() + dt.timedelta(days=1, hours=2)
-).isoformat() + "Z"  # 2 hours later
+end_time = (dt.datetime.now() + dt.timedelta(days=1, hours=2)).isoformat() + "Z"  # 2 hours later
 
 
 calendar = GoogleCalendarManager()
