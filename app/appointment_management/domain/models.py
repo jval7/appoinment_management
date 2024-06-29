@@ -1,21 +1,17 @@
+# pylint: skip-file
 from typing import Any
 
 import pydantic
 from typing_extensions import Annotated
 
 from app.appointment_management.domain import enums
-from app.commons import base_types
 from app.appointment_management.domain import exceptions
+from app.commons import base_types
 
 
 ###############################################################################
 #                                    Entity                                   #
 ###############################################################################
-# def validate_id(cls, data: dict[str, Any]) -> dict[str, Any]:
-#     id_ = data.get("id")
-#     if id_ and isinstance(id_, str):
-#         data["id"] = base_types.HumanFriendlyId(value=id_)
-#     return data
 
 
 class Patient(pydantic.BaseModel):
@@ -26,10 +22,11 @@ class Patient(pydantic.BaseModel):
     email: pydantic.EmailStr
     age: int
 
-    # _cast_id = pydantic.model_validator(mode="before")(validate_id)
-
     def __str__(self) -> str:
-        return f"Nombre: {self.name}, Identificación: {self.identification}, Número de teléfono: {self.phone_number}, Email: {self.email}, Edad: {self.age}"
+        return (
+            f"Nombre: {self.name}, Identificación: {self.identification},"
+            f" Número de teléfono: {self.phone_number}, Email: {self.email}, Edad: {self.age}"
+        )
 
 
 class Appointment(pydantic.BaseModel):
@@ -38,7 +35,6 @@ class Appointment(pydantic.BaseModel):
     motive: str
     payment_state: enums.PaymentState = pydantic.Field(default=enums.PaymentState.PENDING)
     patient: Patient
-    # _cast_id = pydantic.model_validator(mode="before")(validate_id)
 
     def __str__(self) -> str:
         return "\n".join(
@@ -46,7 +42,7 @@ class Appointment(pydantic.BaseModel):
                 f"Id: {self.id}",
                 f"Fecha: {str(self.date)}",
                 f"Motivo: {self.motive}",
-                f"Estado de pago: *{self.payment_state.value}*",
+                f"Estado de pago: *{self.payment_state.value}*",  # pylint: disable=no-member
                 f"Paciente: {str(self.patient.name)}",
             ]
         )
@@ -65,10 +61,9 @@ class Appointment(pydantic.BaseModel):
 
 
 class Agenda(pydantic.BaseModel):
-    id: str = pydantic.Field(default_factory=base_types.IDGenerator.human_friendly)
+    id: str = pydantic.Field(default_factory=base_types.IDGenerator.uuid)
     appointments_id: dict[str, Appointment] = pydantic.Field(default_factory=dict)
     calendar: dict[str, dict[str, str]] = pydantic.Field(default_factory=dict)
-    # _cast_id = pydantic.model_validator(mode="before")(validate_id)
 
     # agenda = {
     #     appointments_id: {
@@ -83,7 +78,7 @@ class Agenda(pydantic.BaseModel):
     #     },
     # }
     def _validate_appointment_id(self, appointment: Appointment) -> None:
-        while appointment.id in self.appointments_id:
+        while appointment.id in self.appointments_id:  # pylint: disable=unsupported-membership-test
             appointment.id = base_types.IDGenerator.human_friendly()
 
     def add_appointment(
@@ -110,13 +105,13 @@ class Agenda(pydantic.BaseModel):
             ),
         )
         self._validate_appointment_id(appointment=appointment)
-        self.appointments_id[appointment.id] = appointment
+        self.appointments_id[appointment.id] = appointment  # pylint: disable=unsupported-assignment-operation
         short_date = appointment.date.to_str_short_date()
         hour_minute = appointment.date.to_str_hour_minute()
-        self.calendar.setdefault(short_date, {})
+        self.calendar.setdefault(short_date, {})  # pylint: disable=no-member
         if hour_minute in self.calendar[short_date]:
             raise exceptions.ScheduleAlreadyTaken(f"The schedule {hour_minute} is already taken")
-        self.calendar[short_date][hour_minute] = appointment.id
+        self.calendar[short_date][hour_minute] = appointment.id  # pylint: disable=no-member
         return appointment
 
     def get_appointment_by_id(self, appointment_id: str) -> Appointment:
@@ -137,7 +132,6 @@ class Agenda(pydantic.BaseModel):
         motive: str | None = None,
         payment_state: enums.PaymentState | None = None,
     ) -> Appointment:
-
         original_appointment = self.appointments_id.get(id_)
         if not original_appointment:
             raise exceptions.AppointmentNotFound(f"The appointment with id {id_} was not found")
@@ -160,7 +154,8 @@ class Agenda(pydantic.BaseModel):
             updated_hour_minute = updated_appoint.date.to_str_hour_minute()
             if updated_hour_minute in self.calendar[updated_short_date]:
                 raise exceptions.ScheduleAlreadyTaken(
-                    f"The schedule {updated_hour_minute} is already taken by appointment {self.calendar[updated_short_date][updated_hour_minute]}"
+                    f"The schedule {updated_hour_minute} is already taken by appointment"
+                    f" {self.calendar[updated_short_date][updated_hour_minute]}"
                 )
             del self.calendar[original_appointment.date.to_str_short_date()][original_appointment.date.to_str_hour_minute()]
             self.calendar[updated_short_date][updated_hour_minute] = updated_appoint.id

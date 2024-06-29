@@ -21,7 +21,8 @@ def create_appointment(
         payment_state=cmd.payment_state,
     )
     db_adapter.save_agenda(agenda)
-    return "Cita creada " + str(appointment.id)
+
+    return f"Cita creada con id: *{appointment.id}*"
 
 
 def get_appointments_by_date(
@@ -32,8 +33,8 @@ def get_appointments_by_date(
     appointments = agenda.get_appointments_by_date(date=cmd.date)
     if not appointments:
         return "No se encontraron citas para la fecha indicada"
-    appointments_str = "\n\n".join(map(str, appointments))
-    return "Citas encontradas:\n\n " + str(appointments_str)
+    appointments_str = [f"- {app}\n\n" for app in appointments]
+    return f"Citas encontradas:\n\n {appointments_str}"
 
 
 def modify_appointment(
@@ -53,7 +54,7 @@ def modify_appointment(
         payment_state=cmd.payment_state,
     )
     db_adapter.save_agenda(agenda)
-    return "Cita actualizada " + str(appointment.id)
+    return f"Cita actualizada con id: *{appointment.id}*"
 
 
 def delete_appointment(
@@ -63,7 +64,7 @@ def delete_appointment(
     agenda = db_adapter.get_agenda(agenda_id=_agenda_id)
     agenda.delete_appointment(appointment_id=cmd.id)
     db_adapter.save_agenda(agenda)
-    return "Cita eliminada " + str(cmd.id)
+    return f"Cita eliminada con id: *{cmd.id}*"
 
 
 # def notify_patients(
@@ -79,5 +80,4 @@ COMMAND_HANDLERS: dict[type[commands.Command], Callable] = {
     commands.GetAppointments: get_appointments_by_date,
     commands.ModifyAppointment: modify_appointment,
     commands.DeleteAppointment: delete_appointment,
-
 }

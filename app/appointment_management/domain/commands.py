@@ -14,15 +14,16 @@ class Command(pydantic.BaseModel):
         return cls.__name__
 
 
-def _parse_date(cls, data: dict[str, Any]) -> dict[str, Any]:
+def _parse_date(data: dict[str, Any]) -> dict[str, Any]:
     if isinstance(data["date"], str):
         data["date"] = base_types.Iso8601Datetime.from_str(date=data["date"])
     return data
 
 
-def _normalize(name: str | None) -> str:
+def _normalize(name: str | None) -> str | None:
     if name is not None:
         return " ".join((word.capitalize()) for word in name.split(" "))
+    return None
 
 
 class GetAppointments(Command):
@@ -34,7 +35,7 @@ class CreateAppointment(Command):
     name: str
     identification: str
     age: int
-    phone_number: str
+    phone_number: str  # TODO: validate phone number, add country code
     email: pydantic.EmailStr
     date: base_types.Iso8601Datetime
     motive: str

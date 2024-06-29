@@ -25,7 +25,3 @@ class Messages(abc.ABC):
 
     @abc.abstractmethod
     def send_email(self, email: str, message: str) -> None: ...
-
-    class Notifications(abc.ABC):
-        @abc.abstractmethod
-        def __call__(self, phone_number: str, email: str): ...

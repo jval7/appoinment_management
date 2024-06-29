@@ -1,5 +1,5 @@
 import json
-from typing import List, Any
+from typing import Any
 
 import pydantic
 
@@ -14,8 +14,8 @@ class _Message(pydantic.BaseModel):
 
 
 class _Value(pydantic.BaseModel):
-    messages: List[_Message] | None = None
-    statuses: List | None = None
+    messages: list[_Message] | None = None
+    statuses: list | None = None
 
 
 class _Change(pydantic.BaseModel):
@@ -23,11 +23,11 @@ class _Change(pydantic.BaseModel):
 
 
 class _Entry(pydantic.BaseModel):
-    changes: List[_Change]
+    changes: list[_Change]
 
 
 class _Body(pydantic.BaseModel):
-    entry: List[_Entry]
+    entry: list[_Entry]
 
 
 class Event(pydantic.BaseModel):
@@ -40,14 +40,16 @@ class Event(pydantic.BaseModel):
             data["body"] = json.loads(data["body"])
         return data
 
-    def _get_messages(self) -> List[_Message] | None:
+    def _get_messages(self) -> list[_Message] | None:
         return self.body.entry[0].changes[0].value.messages
 
     def get_text_message(self) -> str | None:
         messages = self._get_messages()
         if messages and len(messages) > 0:
             if messages[0].type == "text":
-                return messages[0].text["body"]
+                if messages[0].text:
+                    response = messages[0].text.get("body")
+                    return response
         return None
 
     def get_requester_phone_number(self) -> str | None:

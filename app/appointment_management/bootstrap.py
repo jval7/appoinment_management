@@ -4,8 +4,8 @@ import functools
 import inspect
 from collections.abc import Callable
 
-from openai import OpenAI
 import requests
+from openai import OpenAI
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -15,7 +15,7 @@ from app.appointment_management.domain import ports
 from app.appointment_management.services import process_request, handler_manager, handlers
 
 
-class _BootStrap:
+class BootStrap:
     def __init__(
         self,
         llm_adapter: ports.LlmAdapter | None = None,
@@ -44,13 +44,13 @@ class _BootStrap:
         if not self._messages:
             http_client = requests.Session()
             retry = Retry(
-                total=0,  # Total number of retries
-                backoff_factor=0.1,  # Time to sleep between retries
+                total=3,  # Total number of retries
+                backoff_factor=1,  # Time to sleep between retries
                 status_forcelist=[429, 500, 502, 503, 504],  # Status codes to retry on
             )
             adapter = HTTPAdapter(max_retries=retry)
             http_client.mount("https://", adapter)
-            self._messages = adapters.Notifications(http_client=http_client, url=configs.url, headers=configs.headers)
+            self._messages = adapters.Notifications(http_client=http_client, url=configs.wsp_url, headers=configs.wsp_headers)
         if not self._handler_manager:
             dependencies = {"db_adapter": self._db_adapter}
             injected_command_handlers = {
@@ -72,4 +72,3 @@ def _inject_dependencies(handler: Callable, dependencies: dict) -> Callable:
 
 # app = _BootStrap(llm_adapter=adapters.FakeOpenaiClient(), db_adapter=adapters.InMemoryDb(db={"1": {"id": "1"}})).setup_dependencies()
 # app = _BootStrap(db_adapter=adapters.InMemoryDb(db={"1": {"id": "1"}}),messages=adapters.FakeNotifications()).setup_dependencies()
-app = _BootStrap().setup_dependencies()

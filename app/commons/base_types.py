@@ -1,7 +1,6 @@
 import enum
 import random
 import string
-import time
 import uuid
 from datetime import datetime
 
@@ -22,13 +21,15 @@ class ValueObject(pydantic.BaseModel):
 class Iso8601Datetime(ValueObject):
     date: datetime
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Iso8601Datetime):
             return self.date == other.date
-        elif isinstance(other, str):
-            return self.date == datetime.fromisoformat(other)
-        else:
-            return False
+        if isinstance(other, str):
+            try:
+                return self.date == datetime.fromisoformat(other)
+            except ValueError:
+                return False
+        return False
 
     @classmethod
     def from_str(cls, date: str) -> "Iso8601Datetime":
@@ -62,5 +63,3 @@ class IDGenerator:
     @staticmethod
     def uuid() -> str:
         return str(uuid.uuid4())
-
-

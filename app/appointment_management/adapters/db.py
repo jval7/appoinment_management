@@ -1,9 +1,8 @@
-from typing import Any
+from typing import Any, cast
 
 import boto3
 
-from app.appointment_management.domain import models, ports, commands, exceptions
-from app.commons import base_types
+from app.appointment_management.domain import models, ports, exceptions
 
 
 class InMemoryDb(ports.DbAdapter):
@@ -17,7 +16,7 @@ class InMemoryDb(ports.DbAdapter):
         agenda = self._db.get(agenda_id)
         if agenda is None:
             raise exceptions.AgentNotFound("Agenda not found")
-        return models.Agenda.parse_obj(agenda)
+        return cast(models.Agenda, models.Agenda.parse_obj(agenda))
 
 
 class DynamoDb(ports.DbAdapter):
@@ -33,4 +32,4 @@ class DynamoDb(ports.DbAdapter):
         if "Item" not in response:
             raise exceptions.AgentNotFound("Agenda not found")
         print(response)
-        return models.Agenda.parse_obj(response["Item"])
+        return cast(models.Agenda, models.Agenda.parse_obj(response["Item"]))
