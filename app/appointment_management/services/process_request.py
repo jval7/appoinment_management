@@ -31,5 +31,3 @@ class AppointmentManagementHandler:
             self._messages.reply(message="El horario indicado se encuentra ocupado", to=requester_phone_number)
         except exceptions.AppointmentNotFound:
             self._messages.reply(message="No se encontró la cita", to=requester_phone_number)
-
-    # def manage_notifications(self, broadcaster_phone:str) -> None:

@@ -15,7 +15,7 @@ class Command(pydantic.BaseModel):
 
 
 def _parse_date(data: dict[str, Any]) -> dict[str, Any]:
-    if isinstance(data["date"], str):
+    if data["date"] is not None and isinstance(data["date"], str):
         data["date"] = base_types.Iso8601Datetime.from_str(date=data["date"])
     return data
 
@@ -55,6 +55,7 @@ class ModifyAppointment(Command):
     motive: str | None = None
     payment_state: PaymentState | None = None
     _normalize_name = pydantic.field_validator("name")(_normalize)
+    _normalize_date = pydantic.model_validator(mode="before")(_parse_date)
 
     @pydantic.model_validator(mode="after")
     def check_fields(self) -> Self:
