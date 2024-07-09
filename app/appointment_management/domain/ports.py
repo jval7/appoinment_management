@@ -25,3 +25,17 @@ class Messages(abc.ABC):
 
     @abc.abstractmethod
     def send_email(self, email: str, message: str) -> None: ...
+
+
+class Calendar(abc.ABC):
+    @abc.abstractmethod
+    def add_event(
+        self,
+        appointment: models.Appointment,
+    ) -> None: ...
+
+    @abc.abstractmethod
+    def remove_event(self, id_: str) -> None: ...
+
+    @abc.abstractmethod
+    def update_event(self, appointment: models.Appointment) -> None: ...

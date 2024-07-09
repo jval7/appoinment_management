@@ -21,8 +21,10 @@ class BootStrap:
         llm_adapter: ports.LlmAdapter | None = None,
         db_adapter: ports.DbAdapter | None = None,
         messages: ports.Messages | None = None,
+        calendar_adapter: ports.Calendar | None = None,
         h_manager: handler_manager.HandlerManager | None = None,
     ) -> None:
+        self._calendar_adapter = calendar_adapter
         self._llm_adapter = llm_adapter
         self._db_adapter = db_adapter
         self._messages = messages
@@ -36,7 +38,7 @@ class BootStrap:
                 model="gpt-3.5-turbo-0125",
                 openai_client=openai_client,
                 base_prompt=configurations.base_prompt,
-                max_tokens=100,
+                max_tokens=1000,
                 temperature=0,
             )
         if not self._db_adapter:
@@ -51,16 +53,28 @@ class BootStrap:
             adapter = HTTPAdapter(max_retries=retry)
             http_client.mount("https://", adapter)
             self._messages = adapters.Notifications(http_client=http_client, url=configs.wsp_url, headers=configs.wsp_headers)
+        if not self._calendar_adapter:
+            http_client = requests.Session()
+            retry = Retry(
+                total=3,  # Total number of retries
+                backoff_factor=1,  # Time to sleep between retries
+                status_forcelist=[429, 500, 502, 503, 504],  # Status codes to retry on
+            )
+            adapter = HTTPAdapter(max_retries=retry)
+            http_client.mount("https://", adapter)
+            self._calendar_adapter = adapters.GoogleCalendar(http_client=http_client)
         if not self._handler_manager:
-            dependencies = {"db_adapter": self._db_adapter}
+            dependencies = {"db_adapter": self._db_adapter, "calendar_adapter": self._calendar_adapter}
             injected_command_handlers = {
                 command_type: _inject_dependencies(handler, dependencies) for command_type, handler in handlers.COMMAND_HANDLERS.items()
             }
             self._handler_manager = handler_manager.HandlerManager(command_handlers=injected_command_handlers)
+
         return process_request.AppointmentManagementHandler(
             llm_executor=self._llm_adapter,
             messages=self._messages,
             h_manager=self._handler_manager,
+            calendar_adapter=self._calendar_adapter,
         )
 
 

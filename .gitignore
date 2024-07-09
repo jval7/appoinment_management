@@ -90,3 +90,5 @@ ENV/
 .ropeproject
 # folders
 temporal_pkg/
+*.zip
+*.json

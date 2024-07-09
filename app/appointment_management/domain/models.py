@@ -34,6 +34,7 @@ class Appointment(pydantic.BaseModel):
     date: Annotated[base_types.Iso8601Datetime, pydantic.PlainSerializer(lambda x: x.to_str())]
     motive: str
     payment_state: enums.PaymentState = pydantic.Field(default=enums.PaymentState.PENDING)
+    appointment_state: enums.AppointmentState = pydantic.Field(default=enums.AppointmentState.NOT_PAID)
     patient: Patient
 
     def __str__(self) -> str:
@@ -96,6 +97,9 @@ class Agenda(pydantic.BaseModel):
             date=date,
             motive=motive,
             payment_state=payment_state,
+            appointment_state=(
+                enums.AppointmentState.PAID if payment_state != enums.PaymentState.PENDING else enums.AppointmentState.NOT_PAID
+            ),
             patient=Patient(
                 name=name,
                 identification=identification,
@@ -135,11 +139,15 @@ class Agenda(pydantic.BaseModel):
         original_appointment = self.appointments_id.get(id_)
         if not original_appointment:
             raise exceptions.AppointmentNotFound(f"The appointment with id {id_} was not found")
+        appointment_state = None
+        if payment_state is not None and payment_state != enums.PaymentState.PENDING:
+            appointment_state = enums.AppointmentState.PAID
         updated_appoint = Appointment(
             id=id_,
             date=date or original_appointment.date,
             motive=motive or original_appointment.motive,
             payment_state=payment_state or original_appointment.payment_state,
+            appointment_state=appointment_state or original_appointment.appointment_state,
             patient=Patient(
                 name=name or original_appointment.patient.name,
                 identification=identification or original_appointment.patient.identification,

@@ -1,6 +1,6 @@
+import datetime as dt
 import enum
 import random
-import string
 import uuid
 from datetime import datetime
 
@@ -21,6 +21,9 @@ class ValueObject(pydantic.BaseModel):
 class Iso8601Datetime(ValueObject):
     date: datetime
 
+    def __add__(self, other: dt.timedelta) -> "Iso8601Datetime":
+        return Iso8601Datetime(date=self.date + other)
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Iso8601Datetime):
             return self.date == other.date
@@ -37,6 +40,9 @@ class Iso8601Datetime(ValueObject):
 
     def to_str(self) -> str:
         return self.date.strftime("%Y-%m-%dT%H:%M")
+
+    def to_str_isoformat(self) -> str:
+        return self.date.isoformat()
 
     def to_str_short_date(self) -> str:
         return self.date.strftime("%Y-%m-%d")
@@ -58,7 +64,11 @@ class IDGenerator:
         if size < 1:
             raise ValueError("The size must be greater than zero")
 
-        return "".join(random.SystemRandom().choices(string.ascii_uppercase + string.digits, k=size))
+        # Base32hex alphabet
+        base32hex_alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUV"
+
+        # Generate a random string of the specified size
+        return "".join(random.choice(base32hex_alphabet) for _ in range(size))  # nosec
 
     @staticmethod
     def uuid() -> str:

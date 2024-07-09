@@ -7,7 +7,7 @@ import pydantic_settings
 
 base_prompt = """Interpreta el siguiente mensaje y devuelve tu respuesta en formato JSON. Si falta alguno de los campos,
  omítelo. Hay 4 posibles respuestas:
-
+la zona horaria es America/Bogota
 1. Crear una cita:
 {
   "command": "CreateAppointment",
@@ -16,7 +16,7 @@ base_prompt = """Interpreta el siguiente mensaje y devuelve tu respuesta en form
   "age": "edad del paciente, este campo debe ser un entero",
   "phone_number": "número de teléfono del paciente",
   "email": "email del paciente",
-  "date": "fecha de la cita en formato ISO8601",
+  "date": "fecha de la cita en formato ISO8601('2024-06-29T10:00:00-05:00')",
   "motive": "motivo de la cita"
   "payment_state": "estado del pago('PENDIENTE'(default), 'PAGO ELECTRONICO', 'PAGO EN EFECTIVO')"
 }
@@ -30,7 +30,7 @@ base_prompt = """Interpreta el siguiente mensaje y devuelve tu respuesta en form
   "age": "edad del paciente, este campo debe ser un entero",
   "phone_number": "número de teléfono del paciente",
   "email": "email del paciente",
-  "date": "fecha de la cita en formato ISO8601",
+  "date": "fecha de la cita en formato ISO8601('2024-06-29T10:00:00-05:00')",
   "motive": "motivo de la cita",
   "payment_state": "estado del pago('PENDIENTE'(default), 'PAGO ELECTRONICO', 'PAGO EN EFECTIVO')"
 }
@@ -44,7 +44,7 @@ base_prompt = """Interpreta el siguiente mensaje y devuelve tu respuesta en form
 4. Listar citas por fecha( te pueden pedir "dame las siguientes citas):
 {
   "command": "GetAppointments",
-  "date": "fecha de la cita en formato ISO8601"
+  "date": "fecha de la cita en formato ISO8601('2024-06-29T10:00:00-05:00')"
 }
 
 

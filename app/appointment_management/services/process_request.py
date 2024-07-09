@@ -8,10 +8,12 @@ class AppointmentManagementHandler:
         messages: ports.Messages,
         llm_executor: ports.LlmAdapter,
         h_manager: handler_manager.HandlerManager,
+        calendar_adapter: ports.Calendar,
     ) -> None:
         self._llm_executor = llm_executor
         self._messages = messages
         self._handler_manager = h_manager
+        self._calendar_adapter = calendar_adapter
 
     def process_request(self, prompt: str, requester_phone_number: str) -> None:
         try:

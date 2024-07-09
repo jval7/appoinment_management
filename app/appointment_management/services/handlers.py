@@ -8,6 +8,7 @@ _agenda_id = "1"
 def create_appointment(
     cmd: commands.CreateAppointment,
     db_adapter: ports.DbAdapter,
+    calendar_adapter: ports.Calendar,
 ) -> str:
     agenda = db_adapter.get_agenda(agenda_id=_agenda_id)
     appointment = agenda.add_appointment(
@@ -21,7 +22,7 @@ def create_appointment(
         payment_state=cmd.payment_state,
     )
     db_adapter.save_agenda(agenda)
-
+    calendar_adapter.add_event(appointment=appointment)
     return f"Cita creada con id: *{appointment.id}*"
 
 
@@ -40,6 +41,7 @@ def get_appointments_by_date(
 def modify_appointment(
     cmd: commands.ModifyAppointment,
     db_adapter: ports.DbAdapter,
+    calendar_adapter: ports.Calendar,
 ) -> str:
     agenda = db_adapter.get_agenda(agenda_id=_agenda_id)
     appointment = agenda.modify_appointment(
@@ -54,16 +56,20 @@ def modify_appointment(
         payment_state=cmd.payment_state,
     )
     db_adapter.save_agenda(agenda)
+    if any([cmd.date, cmd.payment_state]):
+        calendar_adapter.update_event(appointment=appointment)
     return f"Cita actualizada con id: *{appointment.id}*"
 
 
 def delete_appointment(
     cmd: commands.DeleteAppointment,
     db_adapter: ports.DbAdapter,
+    calendar_adapter: ports.Calendar,
 ) -> str:
     agenda = db_adapter.get_agenda(agenda_id=_agenda_id)
     agenda.delete_appointment(appointment_id=cmd.id)
     db_adapter.save_agenda(agenda)
+    calendar_adapter.remove_event(id_=cmd.id)
     return f"Cita eliminada con id: *{cmd.id}*"
 
 
