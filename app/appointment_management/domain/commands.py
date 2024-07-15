@@ -7,15 +7,18 @@ from app.commons import base_types
 
 
 class Command(pydantic.BaseModel):
-    requester_phone_number: str
 
     @classmethod
     def get_command_name(cls) -> str:
         return cls.__name__
 
 
+class CrudCommand(Command):
+    requester_phone_number: str
+
+
 def _parse_date(data: dict[str, Any]) -> dict[str, Any]:
-    if data["date"] is not None and isinstance(data["date"], str):
+    if data.get("date", None) is not None and isinstance(data["date"], str):
         data["date"] = base_types.Iso8601Datetime.from_str(date=data["date"])
     return data
 
@@ -26,12 +29,12 @@ def _normalize(name: str | None) -> str | None:
     return None
 
 
-class GetAppointments(Command):
+class GetAppointments(CrudCommand):
     date: base_types.Iso8601Datetime
     _normalize_date = pydantic.model_validator(mode="before")(_parse_date)
 
 
-class CreateAppointment(Command):
+class CreateAppointment(CrudCommand):
     name: str
     identification: str
     age: int
@@ -44,7 +47,7 @@ class CreateAppointment(Command):
     _normalize_name = pydantic.field_validator("name")(_normalize)
 
 
-class ModifyAppointment(Command):
+class ModifyAppointment(CrudCommand):
     id: str
     name: str | None = None
     identification: str | None = None
@@ -65,5 +68,9 @@ class ModifyAppointment(Command):
         return self
 
 
-class DeleteAppointment(Command):
+class DeleteAppointment(CrudCommand):
     id: str
+
+
+class NotifyPatients(Command):
+    date: base_types.Iso8601Datetime = pydantic.Field(default_factory=base_types.Iso8601Datetime.now)

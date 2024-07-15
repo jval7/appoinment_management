@@ -65,17 +65,24 @@ el mensaje a interpretar es el siguiente:
 class Configs(pydantic_settings.BaseSettings):
     model_config = pydantic_settings.SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
     wsp_token: str
-    number_id: str
+    crud_number_id: str
+    notificator_number_id: str
     wsp_url: str
     wsp_headers: dict[str, str] = pydantic.Field(default_factory=dict)
     openai_url: str | None = None
     openai_api_key: str = "123"
     table_name: str
+    fb_verify_token: str | None = None
+    payment_pending_message: str
+    cancellation_policy_message: str
 
     @pydantic.model_validator(mode="after")
     def check_fields(self) -> Self:
-        if not all([self.wsp_token, self.number_id, self.wsp_url]):
+        if not all([self.wsp_token, self.crud_number_id, self.wsp_url]):
             raise ValueError("All fields must be provided")
-        self.wsp_url = self.wsp_url.replace("{number_id}", self.number_id)
+        # self.wsp_url = self.wsp_url.replace("{number_id}", self.main_number_id)
         self.wsp_headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.wsp_token}"}
         return self
+
+
+configs = Configs()

@@ -6,7 +6,7 @@ from typing_extensions import Annotated
 
 from app.appointment_management.domain import enums
 from app.appointment_management.domain import exceptions
-from app.commons import base_types
+from app.commons import base_types, Iso8601Datetime
 
 
 ###############################################################################
@@ -35,6 +35,7 @@ class Appointment(pydantic.BaseModel):
     motive: str
     payment_state: enums.PaymentState = pydantic.Field(default=enums.PaymentState.PENDING)
     appointment_state: enums.AppointmentState = pydantic.Field(default=enums.AppointmentState.NOT_PAID)
+    created_at: base_types.Iso8601Datetime = pydantic.Field(default_factory=Iso8601Datetime.now)
     patient: Patient
 
     def __str__(self) -> str:
@@ -184,4 +185,14 @@ class Agenda(pydantic.BaseModel):
             return []
         appointments_id = day.values()
         appointments = [self.appointments_id[app_id] for app_id in appointments_id]
+        return appointments
+
+    def get_list_of_appointments_by_range(
+        self, start_date: base_types.Iso8601Datetime, end_date: base_types.Iso8601Datetime
+    ) -> list[Appointment]:
+        appointments = []
+        current_date = start_date
+        while current_date <= end_date:
+            appointments += self.get_appointments_by_date(current_date)
+            current_date += Iso8601Datetime.time_delta(days=1)
         return appointments

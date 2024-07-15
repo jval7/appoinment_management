@@ -4,6 +4,8 @@ import random
 import uuid
 from datetime import datetime
 
+import pytz  # type: ignore
+
 import pydantic
 
 
@@ -20,6 +22,20 @@ class ValueObject(pydantic.BaseModel):
 
 class Iso8601Datetime(ValueObject):
     date: datetime
+
+    @staticmethod
+    def time_delta(days: int) -> dt.timedelta:
+        return dt.timedelta(days=days)
+
+    def __sub__(self, other: "Iso8601Datetime") -> dt.timedelta:
+        if isinstance(other, Iso8601Datetime):
+            return self.date - other.date
+        raise TypeError(f"Unsupported operation between instances of 'Iso8601Datetime' and '{type(other).__name__}'")
+
+    def __le__(self, other: "Iso8601Datetime") -> bool:
+        if isinstance(other, Iso8601Datetime):
+            return self.date <= other.date
+        raise TypeError(f"Unsupported comparison between instances of 'Iso8601Datetime' and '{type(other).__name__}'")
 
     def __add__(self, other: dt.timedelta) -> "Iso8601Datetime":
         return Iso8601Datetime(date=self.date + other)
@@ -55,7 +71,7 @@ class Iso8601Datetime(ValueObject):
 
     @staticmethod
     def now() -> "Iso8601Datetime":
-        return Iso8601Datetime(date=datetime.now())
+        return Iso8601Datetime(date=datetime.now(pytz.timezone("America/Bogota")))
 
 
 class IDGenerator:

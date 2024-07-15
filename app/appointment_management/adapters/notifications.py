@@ -4,21 +4,21 @@ from app.appointment_management.domain import ports
 from app.commons import logger
 
 
-class FakeNotifications(ports.Messages):
+class FakeNotifications(ports.Notificator):
     def reply(self, message: str, to: str) -> None:
         print(f"Message: {message} sent to {to}")
 
-    def start_conversation(self, to: str) -> None:
-        print(f"Conversation started with {to}")
+    def start_conversation(self, template: str, to: str) -> None:
+        print(f"Conversation started with {to} and template: {template}")
 
     def send_email(self, email: str, message: str) -> None:
         print(f"Email: {email} sent with message: {message}")
 
 
-class Notifications(ports.Messages):
-    def __init__(self, http_client: requests.Session, url: str, headers: dict[str, str]) -> None:
+class Notifications(ports.Notificator):
+    def __init__(self, http_client: requests.Session, url: str, headers: dict[str, str], number_id: str) -> None:
         self._http_client = http_client
-        self._url = url
+        self._url = url.replace("{number_id}", number_id)
         self._headers = headers
 
     def reply(self, message: str, to: str) -> None:
@@ -31,10 +31,18 @@ class Notifications(ports.Messages):
         }
         response = self._http_client.post(url=self._url, headers=self._headers, json=data)
         if not response.ok:
-            logger.warning(f"Error sending message to {to}: {response.text}")
+            logger.warning("Error sending message to %s: %s", to, response.text)
 
-    def start_conversation(self, to: str) -> None:
-        self._http_client.post(url=self._url, headers=self._headers)
+    def start_conversation(self, template: str, to: str) -> None:
+        data = {
+            "messaging_product": "whatsapp",
+            "to": to,
+            "type": "template",
+            "template": {"name": template, "language": {"code": "es"}},
+        }
+        response = self._http_client.post(url=self._url, headers=self._headers, json=data)
+        if not response.ok:
+            logger.warning("Error starting conversation with %s: %s", to, response.text)
 
     def send_email(self, email: str, message: str) -> None:
         # self._http_client.post(url=self._url, headers=self._headers)

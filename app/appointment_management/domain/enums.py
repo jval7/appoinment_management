@@ -12,5 +12,6 @@ class PaymentState(base_types.BaseEnum):
 class AppointmentState(base_types.BaseEnum):
     NOT_PAID = enum.auto()
     PAID = enum.auto()
-    POLICIES_SENT = enum.auto()
-    FINAL_REMINDER_SENT = enum.auto()
+    # POLICIES_SENT = enum.auto()
+    # FIRST_REMINDER_SENT = enum.auto()
+    # FINAL_REMINDER_SENT = enum.auto()

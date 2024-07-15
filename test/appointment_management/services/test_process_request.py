@@ -5,7 +5,8 @@ from app.appointment_management.services import process_request
 def bootstrap_test_app() -> process_request.AppointmentManagementHandler:
     return bootstrap.BootStrap(
         db_adapter=adapters.InMemoryDb(db={"1": {"id": "1"}}),
-        messages=adapters.FakeNotifications(),
+        crud_notificator=adapters.FakeNotifications(),
+        patient_notificator=adapters.FakeNotifications(),
         # llm_adapter=adapters.FakeOpenaiClient(),
     ).setup_dependencies()
 

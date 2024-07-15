@@ -1,4 +1,3 @@
-import datetime as dt
 import json
 import os
 from typing import cast
@@ -9,7 +8,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 from app.appointment_management.domain import ports, enums, models
-from app.commons import logger
+from app.commons import base_types, logger
 
 
 class GoogleCalendar(ports.Calendar):
@@ -35,8 +34,6 @@ class GoogleCalendar(ports.Calendar):
                 creds = flow.run_local_server(port=0)
 
             # Save the credentials for the next run
-            # with open("token.json", "w") as token:
-            #     token.write(creds.to_json())
 
         return cast(dict, json.loads(creds.to_json()))
 
@@ -49,7 +46,7 @@ class GoogleCalendar(ports.Calendar):
             "id": (appointment.id.lower() + "test"),
             "summary": appointment.patient.name.upper(),
             "start": {"dateTime": appointment.date.to_str_isoformat()},
-            "end": {"dateTime": (appointment.date + dt.timedelta(hours=1)).to_str_isoformat()},
+            "end": {"dateTime": (appointment.date + base_types.Iso8601Datetime.time_delta(days=1)).to_str_isoformat()},
             "colorId": self.get_color_id(appointment.appointment_state),
         }
 
@@ -72,7 +69,7 @@ class GoogleCalendar(ports.Calendar):
         event_body = {
             "summary": appointment.patient.name.upper(),
             "start": {"dateTime": appointment.date.to_str_isoformat()},
-            "end": {"dateTime": (appointment.date + dt.timedelta(hours=1)).to_str_isoformat()},
+            "end": {"dateTime": (appointment.date + base_types.Iso8601Datetime.time_delta(days=1)).to_str_isoformat()},
             "colorId": self.get_color_id(appointment.appointment_state),
         }
         response = self._http_client.patch(url=f"{self._url}/{appointment.id.lower()+'test'}", headers=self._headers, json=event_body)
@@ -85,9 +82,9 @@ class GoogleCalendar(ports.Calendar):
     @staticmethod
     def get_color_id(color: enums.AppointmentState) -> int:
         colors = {
-            enums.AppointmentState.NOT_PAID: 4,
-            enums.AppointmentState.PAID: 5,
-            enums.AppointmentState.POLICIES_SENT: 9,
-            enums.AppointmentState.FINAL_REMINDER_SENT: 10,
+            enums.AppointmentState.NOT_PAID: 4,  # Red
+            enums.AppointmentState.PAID: 5,  # Yellow
+            # enums.AppointmentState.POLICIES_SENT: 9, # blue
+            # enums.AppointmentState.FINAL_REMINDER_SENT: 10,  # Green
         }
         return colors.get(color, 4)

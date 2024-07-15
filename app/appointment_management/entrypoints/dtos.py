@@ -31,17 +31,21 @@ class _Body(pydantic.BaseModel):
 
 
 class Event(pydantic.BaseModel):
-    body: _Body
+    body: _Body | None = None
+    event_type: str | None = None
+    queryStringParameters: dict[str, Any] | None = None
 
     @pydantic.model_validator(mode="before")
     @classmethod
     def parse_body(cls, data: dict[str, Any]) -> dict[str, Any]:
-        if isinstance(data["body"], str):
+        if isinstance(data.get("body"), str):
             data["body"] = json.loads(data["body"])
         return data
 
     def _get_messages(self) -> list[_Message] | None:
-        return self.body.entry[0].changes[0].value.messages
+        if self.body:
+            return self.body.entry[0].changes[0].value.messages
+        return None
 
     def get_text_message(self) -> str | None:
         messages = self._get_messages()
