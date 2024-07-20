@@ -31,11 +31,15 @@ class Patient(pydantic.BaseModel):
 
 class Appointment(pydantic.BaseModel):
     id: str = pydantic.Field(default_factory=base_types.IDGenerator.human_friendly)
-    date: Annotated[base_types.Iso8601Datetime, pydantic.PlainSerializer(lambda x: x.to_str())]
+    date: Annotated[base_types.Iso8601Datetime, pydantic.PlainSerializer(lambda x: x.to_str_isoformat())]
     motive: str
     payment_state: enums.PaymentState = pydantic.Field(default=enums.PaymentState.PENDING)
     appointment_state: enums.AppointmentState = pydantic.Field(default=enums.AppointmentState.NOT_PAID)
-    created_at: base_types.Iso8601Datetime = pydantic.Field(default_factory=Iso8601Datetime.now)
+    created_at: Annotated[base_types.Iso8601Datetime, pydantic.PlainSerializer(lambda x: x.to_str_isoformat())] = pydantic.Field(
+        default_factory=Iso8601Datetime.now
+    )
+
+    # created_at: base_types.Iso8601Datetime = pydantic.Field(default_factory=Iso8601Datetime.now)
     patient: Patient
 
     def __str__(self) -> str:
@@ -52,8 +56,10 @@ class Appointment(pydantic.BaseModel):
     @pydantic.model_validator(mode="before")
     @classmethod
     def parse_date(cls, data: dict[str, Any]) -> dict[str, Any]:
-        if isinstance(data["date"], str):
-            data["date"] = base_types.Iso8601Datetime.from_str(date=data["date"])
+        date_fields = ["date", "created_at"]
+        for field in date_fields:
+            if isinstance(data.get(field), str):
+                data[field] = base_types.Iso8601Datetime.from_str(date=data[field])
         return data
 
 

@@ -46,7 +46,7 @@ class GoogleCalendar(ports.Calendar):
             "id": (appointment.id.lower() + "test"),
             "summary": appointment.patient.name.upper(),
             "start": {"dateTime": appointment.date.to_str_isoformat()},
-            "end": {"dateTime": (appointment.date + base_types.Iso8601Datetime.time_delta(days=1)).to_str_isoformat()},
+            "end": {"dateTime": (appointment.date + base_types.Iso8601Datetime.time_delta(hours=1)).to_str_isoformat()},
             "colorId": self.get_color_id(appointment.appointment_state),
         }
 
@@ -69,7 +69,7 @@ class GoogleCalendar(ports.Calendar):
         event_body = {
             "summary": appointment.patient.name.upper(),
             "start": {"dateTime": appointment.date.to_str_isoformat()},
-            "end": {"dateTime": (appointment.date + base_types.Iso8601Datetime.time_delta(days=1)).to_str_isoformat()},
+            "end": {"dateTime": (appointment.date + base_types.Iso8601Datetime.time_delta(hours=1)).to_str_isoformat()},
             "colorId": self.get_color_id(appointment.appointment_state),
         }
         response = self._http_client.patch(url=f"{self._url}/{appointment.id.lower()+'test'}", headers=self._headers, json=event_body)

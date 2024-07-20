@@ -1,8 +1,8 @@
-import enum
 from collections.abc import Callable
 
 from app.appointment_management.domain import commands, ports, enums
-from app.commons import Iso8601Datetime, base_types
+from app.commons import Iso8601Datetime, base_types, logger
+
 
 _agenda_id = "1"
 
@@ -87,8 +87,8 @@ def delete_appointment(
 
 
 class WspTemplates(base_types.BaseEnum):
-    PaymentPending = enum.auto()
-    Reminder = enum.auto()
+    PaymentPending = "pago_pendiente"
+    Reminder = "reminder"
 
 
 def notify_patients(
@@ -101,10 +101,18 @@ def notify_patients(
     appointments = agenda.get_list_of_appointments_by_range(
         start_date=cmd.date, end_date=cmd.date + Iso8601Datetime.time_delta(days=number_of_days)
     )
+    logger.debug("initial date: %s", cmd.date)
+    logger.debug("end date: %s", cmd.date + Iso8601Datetime.time_delta(days=number_of_days))
     notification_days = [7, 3, 1]
     for appointment in appointments:
-        days_between_created_at_and_date = (appointment.created_at - appointment.date).days
+        logger.debug("Appointment found: %s", appointment)
+        logger.debug("app creation date: %s", appointment.created_at)
+        logger.debug("app date: %s", appointment.date)
+        logger.debug("app cmd date: %s", cmd.date)
+        days_between_created_at_and_date = (appointment.date - appointment.created_at).days
         days_until_appointment = (appointment.date - cmd.date).days
+        logger.debug("Days between created_at and date: %s", days_between_created_at_and_date)
+        logger.debug("Days until appointment: %s", days_until_appointment)
 
         # Define the days when notifications should be sent
 
@@ -116,13 +124,25 @@ def notify_patients(
                     continue
                 if days_until_appointment == 3 and days_between_created_at_and_date == 4:
                     continue
-                notificator.start_conversation(template=WspTemplates.PaymentPending, to=appointment.patient.phone_number)
+                notificator.start_conversation(
+                    template=WspTemplates.PaymentPending,
+                    to=appointment.patient.phone_number,
+                    parameters=[appointment.patient.name, appointment.date.to_str_words()],
+                )
             # For PAID state, avoid sending reminders on consecutive days
             elif appointment.appointment_state == enums.AppointmentState.PAID:
                 if days_until_appointment == 1:
-                    notificator.start_conversation(template=WspTemplates.Reminder, to=appointment.patient.phone_number)
+                    notificator.start_conversation(
+                        template=WspTemplates.Reminder,
+                        to=appointment.patient.phone_number,
+                        parameters=[appointment.patient.name, appointment.date.to_str_words()],
+                    )
                 elif not (days_until_appointment + 1 == days_between_created_at_and_date):
-                    notificator.start_conversation(template=WspTemplates.Reminder, to=appointment.patient.phone_number)
+                    notificator.start_conversation(
+                        template=WspTemplates.Reminder,
+                        to=appointment.patient.phone_number,
+                        parameters=[appointment.patient.name, appointment.date.to_str_words()],
+                    )
 
 
 COMMAND_HANDLERS: dict[type[commands.Command], Callable] = {

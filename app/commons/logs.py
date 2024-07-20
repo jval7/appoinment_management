@@ -11,7 +11,8 @@ def get_lambda_logger() -> logging.Logger:
     logger_ = logging.getLogger(os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "NoLambdaEnvironment"))
     logger_.propagate = False
     logger_.setLevel(logging.INFO)
-    stdout_handler.setLevel(logging.INFO)
+    # stdout_handler.setLevel(logging.INFO)
+    stdout_handler.setLevel(logging.DEBUG)
     logger_.addHandler(stdout_handler)
     return logger_
 

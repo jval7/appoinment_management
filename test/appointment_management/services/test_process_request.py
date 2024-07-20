@@ -7,7 +7,7 @@ def bootstrap_test_app() -> process_request.AppointmentManagementHandler:
         db_adapter=adapters.InMemoryDb(db={"1": {"id": "1"}}),
         crud_notificator=adapters.FakeNotifications(),
         patient_notificator=adapters.FakeNotifications(),
-        # llm_adapter=adapters.FakeOpenaiClient(),
+        llm_adapter=adapters.FakeOpenaiClient(),
     ).setup_dependencies()
 
 

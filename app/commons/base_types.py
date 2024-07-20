@@ -3,6 +3,9 @@ import enum
 import random
 import uuid
 from datetime import datetime
+from typing import cast, Any
+
+from babel.dates import format_datetime
 
 import pytz  # type: ignore
 
@@ -24,8 +27,10 @@ class Iso8601Datetime(ValueObject):
     date: datetime
 
     @staticmethod
-    def time_delta(days: int) -> dt.timedelta:
-        return dt.timedelta(days=days)
+    def time_delta(**kwargs: Any) -> dt.timedelta:
+        days = kwargs.get("days", 0.0)
+        hours = kwargs.get("hours", 0.0)
+        return dt.timedelta(days=days, hours=hours)
 
     def __sub__(self, other: "Iso8601Datetime") -> dt.timedelta:
         if isinstance(other, Iso8601Datetime):
@@ -54,6 +59,9 @@ class Iso8601Datetime(ValueObject):
     def from_str(cls, date: str) -> "Iso8601Datetime":
         return cls(date=datetime.fromisoformat(date))
 
+    def to_str_words(self) -> str:
+        return cast(str, format_datetime(self.date, "EEEE d 'de' MMMM 'de' y 'a las' HH:mm", locale="es_CO"))
+
     def to_str(self) -> str:
         return self.date.strftime("%Y-%m-%dT%H:%M")
 
@@ -66,12 +74,13 @@ class Iso8601Datetime(ValueObject):
     def to_str_hour_minute(self) -> str:
         return self.date.strftime("%H:%M")
 
-    def __str__(self) -> str:
-        return self.date.strftime("%Y-%m-%dT%H:%M")
+    # def __str__(self) -> str:
+    #     return self.date.strftime("%Y-%m-%dT%H:%M")
 
     @staticmethod
     def now() -> "Iso8601Datetime":
-        return Iso8601Datetime(date=datetime.now(pytz.timezone("America/Bogota")))
+        date = datetime.now(pytz.timezone("America/Bogota")).replace(hour=0, minute=0, second=0, microsecond=0)
+        return Iso8601Datetime(date=date)
 
 
 class IDGenerator:

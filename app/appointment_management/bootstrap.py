@@ -66,6 +66,7 @@ class BootStrap:
                 "notificator": self._patient_notificator,
                 "payment_pending_message": configs.payment_pending_message,
                 "cancellation_policy_message": configs.cancellation_policy_message,
+                "number_of_days": 7,
             }
             injected_command_handlers = {
                 command_type: _inject_dependencies(handler, dependencies) for command_type, handler in handlers.COMMAND_HANDLERS.items()
